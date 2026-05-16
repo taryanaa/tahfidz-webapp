@@ -1,0 +1,100 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      String   @default("santri") // santri, ustadz, admin
+  nis       String?  @unique // Nomor Induk Santri
+  kelas     String?
+  kamar     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  hafalan     Hafalan[] @relation("HafalanSantri")
+  hafalanDiperiksa Hafalan[] @relation("HafalanUstadz")
+  murajaah    Murajaah[] @relation("MurajaahSantri")
+  murajaahDiperiksa Murajaah[] @relation("MurajaahUstadz")
+  progres     Progres[] @relation("ProgresSantri")
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  title     String
+  content   String?
+  published Boolean  @default(false)
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Hafalan {
+  id          String   @id @default(cuid())
+  santriId    String
+  surah       String
+  ayatDari    Int
+  ayatSampai  Int
+  juz         Int
+  halaman     Int?
+  keterangan  String?
+  nilai       Int?     // 0-100
+  status      String   @default("diterima") // diterima, perbaikan, gagal
+  ustadzId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  santri User @relation("HafalanSantri", fields: [santriId], references: [id])
+  ustadz User? @relation("HafalanUstadz", fields: [ustadzId], references: [id])
+}
+
+model Murajaah {
+  id          String   @id @default(cuid())
+  santriId    String
+  surah       String
+  ayatDari    Int
+  ayatSampai  Int
+  juz         Int
+  halaman     Int?
+  keterangan  String?
+  nilai       Int?     // 0-100
+  status      String   @default("lancar") // lancar, kurang lancar, gagal
+  ustadzId    String?
+  tanggal     DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  santri User @relation("MurajaahSantri", fields: [santriId], references: [id])
+  ustadz User? @relation("MurajaahUstadz", fields: [ustadzId], references: [id])
+}
+
+model Progres {
+  id            String   @id @default(cuid())
+  santriId      String
+  totalHafalan  Int      @default(0) // jumlah ayat total
+  juzDihafal    Int      @default(0)
+  targetHafalan Int      @default(30) // target juz
+  targetTanggal DateTime?
+  persentase    Float    @default(0)
+  periode       String   // bulan-tahun, misal "12-2024"
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  santri User @relation("ProgresSantri", fields: [santriId], references: [id])
+}
